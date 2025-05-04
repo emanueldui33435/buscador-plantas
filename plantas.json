@@ -1,0 +1,20 @@
+[
+  {
+    "nombre": "Orquidea",
+    "nombre_cientifico": "Orchidaceae",
+    "riego": "Moderado",
+    "luz": "Luz indirecta brillante",
+    "humedad": "Alta",
+    "temperatura": "18-24°C",
+    "descripcion": "Flores elegantes que requieren cuidado en humedad y luz."
+  },
+  {
+    "nombre": "Cactus",
+    "nombre_cientifico": "Cactaceae",
+    "riego": "Escaso",
+    "luz": "Luz solar directa",
+    "humedad": "Baja",
+    "temperatura": "20-30°C",
+    "descripcion": "Planta suculenta resistente, ideal para climas secos."
+  }
+]
