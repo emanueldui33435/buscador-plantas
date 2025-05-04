@@ -2,86 +2,73 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>🌿 Buscador de Plantas IoT</title>
+  <title>🌱 Buscador de Plantas - Perenual API</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0fff0;
+      background-color: #e8f5e9;
       text-align: center;
-      padding: 30px;
+      padding: 40px;
     }
     input, button {
       padding: 10px;
       font-size: 16px;
-      margin: 5px;
+      margin: 10px;
     }
-    #resultado {
+    #result {
       margin-top: 30px;
       padding: 20px;
-      background: #d8f3dc;
-      border-radius: 10px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
-      text-align: left;
+    }
+    img {
+      max-width: 100%;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-
-  <h1>🌿 Buscador de Plantas (API Plantbook)</h1>
-  <input type="text" id="plantaInput" placeholder="Ej: aloe, cactus, basil...">
+  <h1>🌿 Buscador de Plantas</h1>
+  <input type="text" id="plantName" placeholder="Ej: aloe, cactus, orchid...">
   <button onclick="buscarPlanta()">Buscar</button>
 
-  <div id="resultado"></div>
+  <div id="result"></div>
 
   <script>
     async function buscarPlanta() {
-      const input = document.getElementById("plantaInput").value.trim().toLowerCase();
-      const resultado = document.getElementById("resultado");
-      resultado.innerHTML = "🔍 Buscando...";
+      const nombre = document.getElementById("plantName").value.trim().toLowerCase();
+      const result = document.getElementById("result");
+      result.innerHTML = "🔍 Buscando planta...";
 
-      const proxy = "https://cors-anywhere.herokuapp.com/";
-      const apiKey = "dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a";
+      const apiKey = "sk-SPJk681700e00204010216";
+      const url = `https://perenual.com/api/species-list?key=${apiKey}&q=${encodeURIComponent(nombre)}`;
 
       try {
-        // 1. Obtener lista de plantas
-        const listaRes = await fetch(proxy + "https://plantbook.io/api/v1/plant/list", {
-          headers: {
-            "Authorization": "Token " + apiKey
-          }
-        });
+        const res = await fetch(url);
+        const data = await res.json();
 
-        const lista = await listaRes.json();
-        const planta = lista.find(p => p.Common_name.toLowerCase().includes(input));
-
-        if (!planta) {
-          resultado.innerHTML = "❌ Planta no encontrada.";
+        if (!data.data || data.data.length === 0) {
+          result.innerHTML = "❌ Planta no encontrada.";
           return;
         }
 
-        // 2. Obtener detalles usando slug
-        const detalleRes = await fetch(proxy + `https://plantbook.io/api/v1/plant/detail/${planta.Slug}`, {
-          headers: {
-            "Authorization": "Token " + apiKey
-          }
-        });
+        const planta = data.data[0];
 
-        const detalle = await detalleRes.json();
-
-        // 3. Mostrar resultados
-        resultado.innerHTML = `
-          <h2>${detalle.Common_name}</h2>
-          <p><strong>Nombre científico:</strong> ${detalle.Scientific_name}</p>
-          <p><strong>Humedad ideal:</strong> ${detalle.Humidity}</p>
-          <p><strong>Temperatura ideal:</strong> ${detalle.Temperature}</p>
-          <p><strong>Riego:</strong> ${detalle.Watering}</p>
-          <p><strong>Luz:</strong> ${detalle.Lighting}</p>
-          <p><strong>Fertilización:</strong> ${detalle.Fertilizer}</p>
+        result.innerHTML = `
+          <h2>${planta.common_name || "Sin nombre común"}</h2>
+          <img src="${planta.default_image?.original_url || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" alt="Imagen de planta">
+          <p><strong>Nombre científico:</strong> ${planta.scientific_name}</p>
+          <p><strong>Riego:</strong> ${planta.watering}</p>
+          <p><strong>Luz:</strong> ${planta.sunlight?.join(", ")}</p>
+          <p><strong>Descripción:</strong> ${planta.description || "No disponible"}</p>
         `;
       } catch (error) {
-        resultado.innerHTML = "❌ Error al obtener datos.";
-        console.error("Error:", error);
+        result.innerHTML = "❌ Error al obtener datos.";
+        console.error(error);
       }
     }
   </script>
