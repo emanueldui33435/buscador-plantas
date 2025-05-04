@@ -43,7 +43,7 @@
     async function buscarPlanta() {
       const nombre = document.getElementById("plantName").value.trim().toLowerCase();
       const result = document.getElementById("result");
-      result.innerHTML = "🔍 Buscando planta...";
+      result.innerHTML = "Buscando planta...";
 
       const apiKey = "sk-SPJk681700e00204010216";
       const url = `https://perenual.com/api/species-list?key=${apiKey}&q=${encodeURIComponent(nombre)}`;
@@ -53,7 +53,7 @@
         const data = await res.json();
 
         if (!data.data || data.data.length === 0) {
-          result.innerHTML = "❌ Planta no encontrada.";
+          result.innerHTML = "Planta no encontrada.";
           return;
         }
 
@@ -72,7 +72,7 @@
           <p><strong>Descripción:</strong> ${planta.description || "No disponible"}</p>
         `;
       } catch (error) {
-        result.innerHTML = "❌ Error al obtener datos.";
+        result.innerHTML = "Error al obtener datos.";
         console.error("Error:", error);
       }
     }
