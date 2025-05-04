@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador de Plantas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    h1 {
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+      background-color: #c8e6c9;
+      padding: 15px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌱 Buscador de Plantas</h1>
+  <input type="text" id="plantName" placeholder="Ingresa el nombre de la planta...">
+  <button onclick="buscarPlanta()">Buscar</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function buscarPlanta() {
+      const nombre = document.getElementById('plantName').value.toLowerCase();
+      const resultDiv = document.getElementById('result');
+
+      if (!nombre) {
+        resultDiv.innerHTML = "Por favor, ingresa un nombre.";
+        return;
+      }
+
+      resultDiv.innerHTML = "Buscando...";
+
+      try {
+        const response = await fetch(`https://perenual.com/api/species-list?key=sk-SPJk681700e00204010216&q=${nombre}`);
+        const data = await response.json();
+
+        if (data && data.data && data.data.length > 0) {
+          const planta = data.data[0];
+          resultDiv.innerHTML = `
+            <h2>${planta.common_name || 'Nombre no disponible'}</h2>
+            <p><strong>Nombre Científico:</strong> ${planta.scientific_name || 'Desconocido'}</p>
+            <p><strong>Requiere Sol:</strong> ${planta.sunlight ? planta.sunlight.join(', ') : 'No disponible'}</p>
+            <p><strong>Riego:</strong> ${planta.watering || 'No disponible'}</p>
+            <p><strong>Descripción:</strong> ${planta.description || 'No disponible'}</p>
+          `;
+        } else {
+          resultDiv.innerHTML = "No se encontró la planta.";
+        }
+      } catch (error) {
+        console.error(error);
+        resultDiv.innerHTML = "Error al buscar la planta.";
+      }
+    }
+  </script>
+</body>
+</html>
