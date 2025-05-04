@@ -2,24 +2,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>🌿 Buscador de Plantas (Plantbook)</title>
+  <title>🌿 Buscador de Plantas IoT</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #eefdf5;
+      background-color: #f0fff0;
       text-align: center;
       padding: 30px;
     }
     input, button {
       padding: 10px;
       font-size: 16px;
-      width: 250px;
-    }
-    button {
-      background-color: #2d6a4f;
-      color: white;
-      border: none;
-      cursor: pointer;
+      margin: 5px;
     }
     #resultado {
       margin-top: 30px;
@@ -35,8 +29,8 @@
 </head>
 <body>
 
-  <h1>🌿 Buscador de Plantas IoT</h1>
-  <input type="text" id="plantaInput" placeholder="Ej: aloe, basil, cactus">
+  <h1>🌿 Buscador de Plantas (API Plantbook)</h1>
+  <input type="text" id="plantaInput" placeholder="Ej: aloe, cactus, basil...">
   <button onclick="buscarPlanta()">Buscar</button>
 
   <div id="resultado"></div>
@@ -51,26 +45,31 @@
       const apiKey = "dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a";
 
       try {
-        // Paso 1: Obtener lista
-        const lista = await fetch(proxy + "https://plantbook.io/api/v1/plant/list", {
+        // 1. Obtener lista de plantas
+        const listaRes = await fetch(proxy + "https://plantbook.io/api/v1/plant/list", {
           headers: {
             "Authorization": "Token " + apiKey
           }
-        }).then(r => r.json());
+        });
 
+        const lista = await listaRes.json();
         const planta = lista.find(p => p.Common_name.toLowerCase().includes(input));
+
         if (!planta) {
           resultado.innerHTML = "❌ Planta no encontrada.";
           return;
         }
 
-        // Paso 2: Obtener detalle por slug
-        const detalle = await fetch(proxy + "https://plantbook.io/api/v1/plant/detail/" + planta.Slug, {
+        // 2. Obtener detalles usando slug
+        const detalleRes = await fetch(proxy + `https://plantbook.io/api/v1/plant/detail/${planta.Slug}`, {
           headers: {
             "Authorization": "Token " + apiKey
           }
-        }).then(r => r.json());
+        });
 
+        const detalle = await detalleRes.json();
+
+        // 3. Mostrar resultados
         resultado.innerHTML = `
           <h2>${detalle.Common_name}</h2>
           <p><strong>Nombre científico:</strong> ${detalle.Scientific_name}</p>
@@ -80,9 +79,9 @@
           <p><strong>Luz:</strong> ${detalle.Lighting}</p>
           <p><strong>Fertilización:</strong> ${detalle.Fertilizer}</p>
         `;
-      } catch (err) {
+      } catch (error) {
         resultado.innerHTML = "❌ Error al obtener datos.";
-        console.error(err);
+        console.error("Error:", error);
       }
     }
   </script>
