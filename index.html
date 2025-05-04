@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title> Selecciona la Plantas IoT</title>
+  <title>🌿 Selección de Planta IoT</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,15 +31,19 @@
       border-radius: 8px;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script>
 </head>
 <body>
-  <h1>🌿 Buscador de Plantas (Perenual API)</h1>
+  <h1>🌿 Buscador de Plantas (Perenual API + MQTT)</h1>
   <input type="text" id="plantName" placeholder="Ej: aloe, orchid, bigleaf hydrangea">
   <button onclick="buscarPlanta()">Buscar</button>
 
   <div id="result"></div>
 
   <script>
+    const client = new Paho.MQTT.Client("192.168.203.1", 9001, "web_" + parseInt(Math.random() * 1000));
+    client.connect({ onSuccess: () => console.log("✅ Conectado a MQTT"), useSSL: false });
+
     async function buscarPlanta() {
       const nombre = document.getElementById("plantName").value.trim().toLowerCase();
       const result = document.getElementById("result");
@@ -53,11 +57,10 @@
         const data = await res.json();
 
         if (!data.data || data.data.length === 0) {
-          result.innerHTML = "Planta no encontrada.";
+          result.innerHTML = "❌ Planta no encontrada.";
           return;
         }
 
-        // Coincidencia exacta o usar el primer resultado
         const planta = data.data.find(p =>
           (p.common_name || '').toLowerCase() === nombre ||
           (p.scientific_name || '').toLowerCase() === nombre
@@ -71,10 +74,26 @@
           <p><strong>Luz:</strong> ${planta.sunlight?.join(", ")}</p>
           <p><strong>Descripción:</strong> ${planta.description || "No disponible"}</p>
         `;
+
+        publicarDatosAESP32(planta);
       } catch (error) {
-        result.innerHTML = "Error al obtener datos.";
+        result.innerHTML = "❌ Error al obtener datos.";
         console.error("Error:", error);
       }
+    }
+
+    function publicarDatosAESP32(planta) {
+      const datos = {
+        nombre: planta.common_name,
+        temperatura: planta.ideal_light || "NA",
+        riego: planta.watering || "NA",
+        luz: planta.sunlight || []
+      };
+
+      const mensaje = new Paho.MQTT.Message(JSON.stringify(datos));
+      mensaje.destinationName = "planta/seleccion";
+      client.send(mensaje);
+      console.log("📤 Enviado a ESP32:", datos);
     }
   </script>
 </body>
