@@ -1,73 +1,39 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>🌿 DUI de Plantas IoT</title>
+  <meta charset="UTF-8" />
+  <title>🌿 DUI1 de Plantas IoT</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #e8f5e9;
-      text-align: center;
-      padding: 40px;
-    }
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-      margin: 10px;
-    }
-    #result {
-      margin-top: 30px;
-      padding: 20px;
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-      text-align: left;
-    }
-    img {
-      max-width: 100%;
-      border-radius: 8px;
-    }
+    body { font-family: Arial; padding: 40px; background: #e8f5e9; text-align: center; }
+    #result { background: white; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 0 5px #ccc; max-width: 600px; margin: auto; }
+    img { max-width: 100%; border-radius: 10px; }
   </style>
 </head>
 <body>
-  <h1>🌱 DUI una Planta (Perenual + MQTT)</h1>
-  <input type="text" id="plantName" placeholder="Ej: aloe, orchid, bigleaf hydrangea">
+  <h1>🌱 CUI1 de Planta IoT</h1>
+  <input type="text" id="plantName" placeholder="Ej: aloe, orchid" />
   <button onclick="buscarPlanta()">Buscar</button>
+  <div id="result">Esperando búsqueda...</div>
 
-  <div id="result"></div>
-
-  <!-- MQTT Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script>
   <script>
     let client;
 
-    function initMQTT() {
-      client = new Paho.MQTT.Client("192.168.203.1", 9001, "web_" + Math.floor(Math.random() * 10000));
-
-      client.onConnectionLost = (responseObject) => {
-        console.error("❌ Conexión perdida:", responseObject.errorMessage);
-      };
-
-      client.onMessageDelivered = (message) => {
-        console.log("📤 Mensaje entregado:", message.payloadString);
-      };
-
+    function conectarMQTT() {
+      client = new Paho.MQTT.Client("192.168.203.1", 9001, "webClient_" + Math.random());
       client.connect({
         onSuccess: () => console.log("✅ Conectado a MQTT"),
-        useSSL: false,
-        onFailure: (e) => console.error("❌ Error de conexión MQTT:", e.errorMessage)
+        onFailure: e => console.error("❌ MQTT Error:", e),
+        useSSL: false
       });
     }
 
-    window.onload = initMQTT;
+    conectarMQTT();
 
     async function buscarPlanta() {
       const nombre = document.getElementById("plantName").value.trim().toLowerCase();
       const result = document.getElementById("result");
-      result.innerHTML = "🔍 Buscando planta...";
+      result.innerHTML = "🔎 Buscando...";
 
       const apiKey = "sk-SPJk681700e00204010216";
       const url = `https://perenual.com/api/species-list?key=${apiKey}&q=${encodeURIComponent(nombre)}`;
@@ -81,37 +47,37 @@
           return;
         }
 
-        const planta = data.data[0]; // usamos el primer resultado
+        const planta = data.data[0];
+        const nombre = planta.common_name || "Sin nombre";
+        const riego = planta.watering || "No especificado";
+        const luz = Array.isArray(planta.sunlight) ? planta.sunlight.join(", ") : planta.sunlight;
+        const img = planta.default_image?.original_url || "https://via.placeholder.com/300x200?text=Sin+imagen";
 
-        // Render info en pantalla
         result.innerHTML = `
-          <h2>${planta.common_name || "Sin nombre común"}</h2>
-          <img src="${planta.default_image?.original_url || 'https://via.placeholder.com/300x200'}" alt="Imagen de planta">
-          <p><strong>Nombre científico:</strong> ${planta.scientific_name?.join(", ") || "Desconocido"}</p>
-          <p><strong>Riego:</strong> ${planta.watering || "No disponible"}</p>
-          <p><strong>Luz:</strong> ${Array.isArray(planta.sunlight) ? planta.sunlight.join(", ") : planta.sunlight}</p>
+          <h2>${nombre}</h2>
+          <img src="${img}" />
+          <p><strong>Riego:</strong> ${riego}</p>
+          <p><strong>Luz:</strong> ${luz}</p>
         `;
 
-        // Enviar vía MQTT
+        // Enviar por MQTT
         if (client && client.isConnected()) {
-          const payload = {
-            nombre: planta.common_name,
-            riego: planta.watering,
-            luz: planta.sunlight,
-            temperatura: "N/A" // puedes ajustar esto si encuentras más datos
+          const msg = {
+            nombre: nombre,
+            riego: riego,
+            luz: luz
           };
-
-          const mensaje = new Paho.MQTT.Message(JSON.stringify(payload));
-          mensaje.destinationName = "planta/seleccion";
-          client.send(mensaje);
-          console.log("✅ Enviado vía MQTT:", payload);
+          const mqttMsg = new Paho.MQTT.Message(JSON.stringify(msg));
+          mqttMsg.destinationName = "planta/seleccion";
+          client.send(mqttMsg);
+          console.log("📤 Enviado MQTT:", msg);
         } else {
-          console.warn("⚠️ MQTT no conectado.");
+          console.warn("⚠️ MQTT no conectado todavía.");
         }
 
-      } catch (error) {
-        console.error("❌ Error al obtener datos:", error);
-        result.innerHTML = "❌ Error al obtener datos.";
+      } catch (err) {
+        result.innerHTML = "❌ Error al buscar planta.";
+        console.error(err);
       }
     }
   </script>
