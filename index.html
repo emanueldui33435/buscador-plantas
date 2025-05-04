@@ -2,75 +2,75 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>🌿 Buscador de Plantas - IoT</title>
+  <title>🌿 Buscador de Plantas IoT</title>
   <style>
     body {
-      background-color: #f3fff3;
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
+      font-family: Arial, sans-serif;
+      background-color: #f0fff4;
       padding: 30px;
-    }
-    h1 {
-      color: #2d6a4f;
+      text-align: center;
     }
     input {
       padding: 10px;
-      font-size: 16px;
       width: 250px;
     }
     button {
       padding: 10px 20px;
-      font-size: 16px;
-      margin-left: 10px;
-      background-color: #40916c;
+      background: #40916c;
       color: white;
       border: none;
-      border-radius: 5px;
       cursor: pointer;
-    }
-    button:hover {
-      background-color: #2d6a4f;
+      margin-left: 10px;
     }
     #resultado {
+      background: #e0f7df;
       margin-top: 30px;
-      background: #e9f7ef;
       padding: 20px;
       border-radius: 10px;
       max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 30px auto;
       text-align: left;
-    }
-    .error {
-      color: red;
     }
   </style>
 </head>
 <body>
 
   <h1>🌿 Buscador de Plantas IoT</h1>
-  <p>Escribe el nombre común de una planta:</p>
-  <input type="text" id="plantaInput" placeholder="Ej: basil, aloe vera, cactus">
+  <input type="text" id="plantaInput" placeholder="Ej: aloe, basil, lavender">
   <button onclick="buscarPlanta()">Buscar</button>
 
   <div id="resultado"></div>
 
   <script>
     async function buscarPlanta() {
-      const nombre = document.getElementById("plantaInput").value.toLowerCase().trim();
+      const entrada = document.getElementById("plantaInput").value.toLowerCase().trim();
       const resultado = document.getElementById("resultado");
-      resultado.innerHTML = "🔍 Buscando información...";
+      resultado.innerHTML = "🔍 Buscando planta...";
 
       try {
-        const res = await fetch(`https://plantbook.io/api/v1/plant/detail/${nombre}`, {
+        // Paso 1: obtener la lista de plantas
+        const listaRes = await fetch("https://plantbook.io/api/v1/plant/list", {
           headers: {
             "Authorization": "Token dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a"
           }
         });
 
-        if (!res.ok) throw new Error("Planta no encontrada");
+        const lista = await listaRes.json();
+        const planta = lista.find(p => p.Common_name.toLowerCase().includes(entrada));
 
-        const data = await res.json();
+        if (!planta) {
+          resultado.innerHTML = "❌ Planta no encontrada.";
+          return;
+        }
+
+        // Paso 2: usar el slug para pedir los detalles
+        const detalleRes = await fetch(`https://plantbook.io/api/v1/plant/detail/${planta.Slug}`, {
+          headers: {
+            "Authorization": "Token dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a"
+          }
+        });
+
+        const data = await detalleRes.json();
 
         resultado.innerHTML = `
           <h2>${data.Common_name}</h2>
@@ -81,9 +81,9 @@
           <p><strong>Luz recomendada:</strong> ${data.Lighting}</p>
           <p><strong>Fertilización:</strong> ${data.Fertilizer}</p>
         `;
-      } catch (err) {
-        console.error(err);
-        resultado.innerHTML = `<p class="error">❌ No se encontró la planta o hubo un error.</p>`;
+      } catch (error) {
+        resultado.innerHTML = "❌ Error al consultar la API.";
+        console.error(error);
       }
     }
   </script>
