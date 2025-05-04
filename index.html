@@ -2,33 +2,33 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>🌿 Buscador de Plantas IoT</title>
+  <title>🌿 Buscador de Plantas (Plantbook)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0fff4;
-      padding: 30px;
+      background-color: #eefdf5;
       text-align: center;
+      padding: 30px;
     }
-    input {
+    input, button {
       padding: 10px;
+      font-size: 16px;
       width: 250px;
     }
     button {
-      padding: 10px 20px;
-      background: #40916c;
+      background-color: #2d6a4f;
       color: white;
       border: none;
       cursor: pointer;
-      margin-left: 10px;
     }
     #resultado {
-      background: #e0f7df;
       margin-top: 30px;
       padding: 20px;
+      background: #d8f3dc;
       border-radius: 10px;
       max-width: 600px;
-      margin: 30px auto;
+      margin-left: auto;
+      margin-right: auto;
       text-align: left;
     }
   </style>
@@ -36,57 +36,55 @@
 <body>
 
   <h1>🌿 Buscador de Plantas IoT</h1>
-  <input type="text" id="plantaInput" placeholder="Ej: aloe, basil, lavender">
+  <input type="text" id="plantaInput" placeholder="Ej: aloe, basil, cactus">
   <button onclick="buscarPlanta()">Buscar</button>
 
   <div id="resultado"></div>
 
   <script>
     async function buscarPlanta() {
-      const entrada = document.getElementById("plantaInput").value.toLowerCase().trim();
+      const input = document.getElementById("plantaInput").value.trim().toLowerCase();
       const resultado = document.getElementById("resultado");
-      resultado.innerHTML = "🔍 Buscando planta...";
+      resultado.innerHTML = "🔍 Buscando...";
+
+      const proxy = "https://cors-anywhere.herokuapp.com/";
+      const apiKey = "dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a";
 
       try {
-        // Paso 1: obtener la lista de plantas
-        const listaRes = await fetch("https://plantbook.io/api/v1/plant/list", {
+        // Paso 1: Obtener lista
+        const lista = await fetch(proxy + "https://plantbook.io/api/v1/plant/list", {
           headers: {
-            "Authorization": "Token dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a"
+            "Authorization": "Token " + apiKey
           }
-        });
+        }).then(r => r.json());
 
-        const lista = await listaRes.json();
-        const planta = lista.find(p => p.Common_name.toLowerCase().includes(entrada));
-
+        const planta = lista.find(p => p.Common_name.toLowerCase().includes(input));
         if (!planta) {
           resultado.innerHTML = "❌ Planta no encontrada.";
           return;
         }
 
-        // Paso 2: usar el slug para pedir los detalles
-        const detalleRes = await fetch(`https://plantbook.io/api/v1/plant/detail/${planta.Slug}`, {
+        // Paso 2: Obtener detalle por slug
+        const detalle = await fetch(proxy + "https://plantbook.io/api/v1/plant/detail/" + planta.Slug, {
           headers: {
-            "Authorization": "Token dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a"
+            "Authorization": "Token " + apiKey
           }
-        });
-
-        const data = await detalleRes.json();
+        }).then(r => r.json());
 
         resultado.innerHTML = `
-          <h2>${data.Common_name}</h2>
-          <p><strong>Nombre científico:</strong> ${data.Scientific_name}</p>
-          <p><strong>Humedad ideal:</strong> ${data.Humidity}</p>
-          <p><strong>Temperatura ideal:</strong> ${data.Temperature}</p>
-          <p><strong>Frecuencia de riego:</strong> ${data.Watering}</p>
-          <p><strong>Luz recomendada:</strong> ${data.Lighting}</p>
-          <p><strong>Fertilización:</strong> ${data.Fertilizer}</p>
+          <h2>${detalle.Common_name}</h2>
+          <p><strong>Nombre científico:</strong> ${detalle.Scientific_name}</p>
+          <p><strong>Humedad ideal:</strong> ${detalle.Humidity}</p>
+          <p><strong>Temperatura ideal:</strong> ${detalle.Temperature}</p>
+          <p><strong>Riego:</strong> ${detalle.Watering}</p>
+          <p><strong>Luz:</strong> ${detalle.Lighting}</p>
+          <p><strong>Fertilización:</strong> ${detalle.Fertilizer}</p>
         `;
-      } catch (error) {
-        resultado.innerHTML = "❌ Error al consultar la API.";
-        console.error(error);
+      } catch (err) {
+        resultado.innerHTML = "❌ Error al obtener datos.";
+        console.error(err);
       }
     }
   </script>
-
 </body>
 </html>
