@@ -1,26 +1,92 @@
-<script>
-  async function buscarPlanta() {
-    const busqueda = document.getElementById("busqueda").value.toLowerCase();
-    const resultado = document.getElementById("resultado");
-    resultado.innerHTML = "Buscando...";
-
-    const res = await fetch("plantas.json");
-    const plantas = await res.json();
-
-    const planta = plantas.find(p => p.nombre.toLowerCase() === busqueda);
-
-    if (planta) {
-      resultado.innerHTML = `
-        <h2>${planta.nombre}</h2>
-        <p><strong>Nombre Científico:</strong> ${planta.nombre_cientifico}</p>
-        <p><strong>Riego:</strong> ${planta.riego}</p>
-        <p><strong>Luz:</strong> ${planta.luz}</p>
-        <p><strong>Humedad:</strong> ${planta.humedad}</p>
-        <p><strong>Temperatura:</strong> ${planta.temperatura}</p>
-        <p><strong>Descripción:</strong> ${planta.descripcion}</p>
-      `;
-    } else {
-      resultado.innerHTML = "<p>No se encontró la planta.</p>";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🌿 Buscador de Plantas - IoT</title>
+  <style>
+    body {
+      background-color: #f3fff3;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 30px;
     }
-  }
-</script>
+    h1 {
+      color: #2d6a4f;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      width: 250px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-left: 10px;
+      background-color: #40916c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2d6a4f;
+    }
+    #resultado {
+      margin-top: 30px;
+      background: #e9f7ef;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌿 Buscador de Plantas IoT</h1>
+  <p>Escribe el nombre común de una planta:</p>
+  <input type="text" id="plantaInput" placeholder="Ej: basil, aloe vera, cactus">
+  <button onclick="buscarPlanta()">Buscar</button>
+
+  <div id="resultado"></div>
+
+  <script>
+    async function buscarPlanta() {
+      const nombre = document.getElementById("plantaInput").value.toLowerCase().trim();
+      const resultado = document.getElementById("resultado");
+      resultado.innerHTML = "🔍 Buscando información...";
+
+      try {
+        const res = await fetch(`https://plantbook.io/api/v1/plant/detail/${nombre}`, {
+          headers: {
+            "Authorization": "Token dc8daecc53a2cfba5e2cf7b56e6bd1e9b3ebde5a"
+          }
+        });
+
+        if (!res.ok) throw new Error("Planta no encontrada");
+
+        const data = await res.json();
+
+        resultado.innerHTML = `
+          <h2>${data.Common_name}</h2>
+          <p><strong>Nombre científico:</strong> ${data.Scientific_name}</p>
+          <p><strong>Humedad ideal:</strong> ${data.Humidity}</p>
+          <p><strong>Temperatura ideal:</strong> ${data.Temperature}</p>
+          <p><strong>Frecuencia de riego:</strong> ${data.Watering}</p>
+          <p><strong>Luz recomendada:</strong> ${data.Lighting}</p>
+          <p><strong>Fertilización:</strong> ${data.Fertilizer}</p>
+        `;
+      } catch (err) {
+        console.error(err);
+        resultado.innerHTML = `<p class="error">❌ No se encontró la planta o hubo un error.</p>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
